@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-app: #111318; --bg-panel: #1B1E26; --bg-elevated: #282D38; --bg-hover: #343A47;
+  --border-default: #343741;
+  --text-primary: #F4F5F7; --text-secondary: #B6BAC5; --text-muted: #858B99;
+  --accent-primary: #20B8A6; --accent-primary-hover: #39C9B8;
+  --status-live: #EF6262; --status-warning: #E9B44C; --status-success: #39C98A; --status-error: #EF6262;
+}
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--bg-app); color: var(--text-primary); font-family: system-ui, 'Segoe UI', sans-serif; overscroll-behavior: none; }
+* { scrollbar-width: thin; scrollbar-color: var(--bg-hover) transparent; }
+.btn { @apply rounded-md bg-elevated px-3 py-2 text-sm font-medium text-tx transition hover:bg-hover active:scale-95 disabled:opacity-40; }
+.btn-accent { @apply bg-accent text-black hover:bg-accent-h; }
+.btn-on { @apply bg-accent text-black; }
+.label { @apply text-[11px] font-semibold uppercase tracking-wider text-mute; }

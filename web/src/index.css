@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-app: #111318;
+  --bg-panel: #1B1E26;
+  --bg-elevated: #282D38;
+  --bg-hover: #343A47;
+  --border-default: #343741;
+  --text-primary: #F4F5F7;
+  --text-secondary: #B6BAC5;
+  --text-muted: #858B99;
+  --accent-primary: #20B8A6;
+  --accent-primary-hover: #39C9B8;
+  --status-live: #EF6262;
+  --status-warning: #E9B44C;
+  --status-success: #39C98A;
+  --status-error: #EF6262;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #111318;
+  color: #F4F5F7;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom dark scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111318;
+}
+::-webkit-scrollbar-thumb {
+  background: #343741;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4B5262;
+}
+
+/* Letterbox 16:9 container utility */
+.aspect-16-9 {
+  aspect-ratio: 16 / 9;
+}
+
+/* Pulse animation for Live status badge */
+@keyframes pulse-live {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.95);
+  }
+}
+
+.animate-pulse-live {
+  animation: pulse-live 1.5s infinite ease-in-out;
+}

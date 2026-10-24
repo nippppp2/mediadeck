@@ -1,0 +1,9 @@
+node_modules
+web/node_modules
+web/dist
+mediadeck.exe
+mediadeck-linux
+data/media/*
+!data/media/.gitkeep
+.DS_Store
+*.log
