@@ -1,6 +1,5 @@
 node_modules
 web/node_modules
-mediadeck.exe
 mediadeck-linux
 data/media/*
 !data/media/.gitkeep
