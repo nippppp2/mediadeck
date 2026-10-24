@@ -23,6 +23,47 @@ type Store struct {
 	mu       sync.RWMutex
 	filePath string
 	data     StoreData
+	supabase *SupabaseClient
+}
+
+// SetSupabase configures the Supabase client and syncs data
+func (s *Store) SetSupabase(client *SupabaseClient) {
+	s.mu.Lock()
+	s.supabase = client
+	s.mu.Unlock()
+	s.SyncWithSupabase()
+}
+
+// GetSupabase returns the active Supabase client if any
+func (s *Store) GetSupabase() *SupabaseClient {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.supabase
+}
+
+// SyncWithSupabase pulls latest media and playlist from Supabase
+func (s *Store) SyncWithSupabase() {
+	if s.supabase == nil {
+		return
+	}
+
+	// Pull media items
+	items, err := s.supabase.GetMediaItems()
+	if err == nil && len(items) > 0 {
+		s.mu.Lock()
+		s.data.MediaItems = items
+		s.mu.Unlock()
+		_ = s.save()
+	}
+
+	// Pull playlist items
+	playlist, err := s.supabase.GetPlaylist()
+	if err == nil && len(playlist) > 0 {
+		s.mu.Lock()
+		s.data.Playlist = playlist
+		s.mu.Unlock()
+		_ = s.save()
+	}
 }
 
 // NewID generates a random UUID string
@@ -212,6 +253,11 @@ func (s *Store) AddMediaItem(item models.MediaItem) {
 	defer s.mu.Unlock()
 	s.data.MediaItems = append(s.data.MediaItems, item)
 	_ = s.save()
+	if s.supabase != nil {
+		go func(m models.MediaItem) {
+			_ = s.supabase.InsertMediaItem(m)
+		}(item)
+	}
 }
 
 // AddMedia adds a media item and returns error
@@ -219,7 +265,13 @@ func (s *Store) AddMedia(item models.MediaItem) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.data.MediaItems = append(s.data.MediaItems, item)
-	return s.save()
+	err := s.save()
+	if s.supabase != nil {
+		go func(m models.MediaItem) {
+			_ = s.supabase.InsertMediaItem(m)
+		}(item)
+	}
+	return err
 }
 
 // DeleteMediaItem removes a media item and cleans up playlist
@@ -254,6 +306,11 @@ func (s *Store) DeleteMediaItem(id string) {
 	}
 
 	_ = s.save()
+	if s.supabase != nil {
+		go func(delID string) {
+			_ = s.supabase.DeleteMediaItem(delID)
+		}(id)
+	}
 }
 
 // DeleteMedia removes a media item and returns the deleted item
@@ -291,7 +348,13 @@ func (s *Store) DeleteMedia(id string) (models.MediaItem, error) {
 		s.data.State.NextMediaID = ""
 	}
 
-	return item, s.save()
+	err := s.save()
+	if s.supabase != nil {
+		go func(delID string) {
+			_ = s.supabase.DeleteMediaItem(delID)
+		}(id)
+	}
+	return item, err
 }
 
 // GetPlaylist returns current playlist items
@@ -314,6 +377,11 @@ func (s *Store) SetPlaylist(playlist []models.PlaylistItem) {
 	defer s.mu.Unlock()
 	s.data.Playlist = playlist
 	_ = s.save()
+	if s.supabase != nil {
+		go func(pl []models.PlaylistItem) {
+			_ = s.supabase.SetPlaylist(pl)
+		}(playlist)
+	}
 }
 
 // SetPlaylistIDs updates playlist using a slice of media IDs

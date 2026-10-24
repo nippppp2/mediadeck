@@ -172,6 +172,19 @@ func (h *Handler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 		thumbnailUrl = "https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=320&q=80"
 	}
 
+	// If Supabase is active, upload to cloud storage
+	if sb := h.store.GetSupabase(); sb != nil {
+		if f, err := os.Open(targetPath); err == nil {
+			if publicURL, err := sb.UploadFile(cleanFileName, f, header.Header.Get("Content-Type")); err == nil {
+				filePath = publicURL
+				if !isVideo {
+					thumbnailUrl = publicURL
+				}
+			}
+			f.Close()
+		}
+	}
+
 	name := r.FormValue("name")
 	if name == "" {
 		name = header.Filename

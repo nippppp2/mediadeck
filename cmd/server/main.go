@@ -22,6 +22,8 @@ import (
 func main() {
 	port := flag.Int("port", 8080, "Port for MediaDeck server")
 	dataDir := flag.String("data", "./data", "Directory for media storage and database")
+	supabaseURL := flag.String("supabase-url", getEnvDefault("SUPABASE_URL", "https://opcikrptvkeqcirzvxwi.supabase.co"), "Supabase Project URL")
+	supabaseKey := flag.String("supabase-key", getEnvDefault("SUPABASE_KEY", "sb_publishable_HPVursaf7oIVkLTofZti1A_7NRhZp8u"), "Supabase Publishable/Anon Key")
 	flag.Parse()
 
 	// Check if PORT environment variable is set (used by cloud platforms like Render)
@@ -40,6 +42,13 @@ func main() {
 	store, err := database.NewStore(*dataDir)
 	if err != nil {
 		log.Fatalf("[Error] Failed to initialize store: %v", err)
+	}
+
+	// Connect to Supabase Cloud if configured
+	if *supabaseURL != "" && *supabaseKey != "" {
+		sbClient := database.NewSupabaseClient(*supabaseURL, *supabaseKey)
+		store.SetSupabase(sbClient)
+		log.Printf("☁️  Supabase Cloud Database & Storage: CONNECTED (%s)\n", *supabaseURL)
 	}
 
 	// Initialize WebSocket hub
@@ -104,4 +113,11 @@ func getPrimaryLocalIP() string {
 		}
 	}
 	return "localhost"
+}
+
+func getEnvDefault(key, def string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	return def
 }
