@@ -59,6 +59,11 @@ func main() {
 	mediaDir := *dataDir + "/media"
 	mediaStreamer := streamer.NewMediaStreamer(mediaDir)
 
+	// If Supabase is connected, automatically migrate any local media files to Supabase Storage in background
+	if *supabaseURL != "" && *supabaseKey != "" {
+		go store.MigrateLocalMediaToSupabase(mediaDir)
+	}
+
 	// Initialize API handlers
 	handler := api.NewHandler(store, hub, mediaDir, *port)
 

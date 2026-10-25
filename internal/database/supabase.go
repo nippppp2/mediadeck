@@ -24,7 +24,7 @@ func NewSupabaseClient(url, apiKey string) *SupabaseClient {
 		baseURL: cleanURL,
 		apiKey:  apiKey,
 		httpClient: &http.Client{
-			Timeout: 20 * time.Second,
+			Timeout: 300 * time.Second,
 		},
 	}
 }
@@ -191,6 +191,7 @@ func (c *SupabaseClient) UploadFile(filename string, fileReader io.Reader, conte
 	}
 	req.Header.Set("apikey", c.apiKey)
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	req.Header.Set("x-upsert", "true")
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}

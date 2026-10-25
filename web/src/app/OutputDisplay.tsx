@@ -87,17 +87,23 @@ export const OutputDisplay: React.FC = () => {
     }
   }, [lastTakeEvent]);
 
-  // Sync Play/Pause with active video deck
+  // Sync Play/Pause with active video deck whenever active deck or media changes
+  const activeMediaObj = activeDeck === 'A' ? deckA.media : deckB.media;
   useEffect(() => {
     const activeVideoRef = activeDeck === 'A' ? videoRefA.current : videoRefB.current;
-    if (!activeVideoRef) return;
+    if (!activeVideoRef || !activeMediaObj || activeMediaObj.type !== 'video') return;
 
     if (state.isPlaying) {
-      activeVideoRef.play().catch(() => {});
+      const playPromise = activeVideoRef.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Autoplay policy: click Output window to allow playback', err);
+        });
+      }
     } else {
       activeVideoRef.pause();
     }
-  }, [state.isPlaying, activeDeck]);
+  }, [state.isPlaying, activeDeck, activeMediaObj]);
 
   // Enter Fullscreen on user click (satisfies browser autoplay policy)
   const handleEnterFullscreen = () => {
@@ -105,6 +111,10 @@ export const OutputDisplay: React.FC = () => {
       document.documentElement.requestFullscreen().catch(() => {});
     }
     setIsFullscreenPromptVisible(false);
+    const activeVideoRef = activeDeck === 'A' ? videoRefA.current : videoRefB.current;
+    if (activeVideoRef && state.isPlaying) {
+      activeVideoRef.play().catch(() => {});
+    }
   };
 
   const renderMedia = (
@@ -117,10 +127,18 @@ export const OutputDisplay: React.FC = () => {
       return (
         <video
           ref={videoRef}
+          key={media.id}
           src={media.filePath}
           loop={state.isLoop}
           playsInline
+          crossOrigin="anonymous"
+          preload="auto"
           autoPlay={state.isPlaying}
+          onLoadedData={(e) => {
+            if (state.isPlaying) {
+              e.currentTarget.play().catch(() => {});
+            }
+          }}
           className="w-full h-full object-contain"
         />
       );

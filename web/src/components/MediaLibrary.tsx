@@ -199,6 +199,9 @@ export const MediaLibrary: React.FC<MediaLibraryProps> = ({
                       <video
                         src={item.filePath}
                         preload="metadata"
+                        muted
+                        playsInline
+                        crossOrigin="anonymous"
                         className="w-full h-full object-cover"
                       />
                     ) : (

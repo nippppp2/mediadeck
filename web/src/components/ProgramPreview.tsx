@@ -24,11 +24,22 @@ export const ProgramPreview: React.FC<ProgramPreviewProps> = ({
     if (!videoRef.current || !media || media.type !== 'video') return;
 
     if (isPlaying) {
-      videoRef.current.play().catch(() => {});
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Play request deferred until metadata/data loads
+        });
+      }
     } else {
       videoRef.current.pause();
     }
   }, [isPlaying, media]);
+
+  const handleLoadedData = () => {
+    if (isPlaying && videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  };
 
   return (
     <div className="flex flex-col rounded-lg border border-app-border bg-app-panel overflow-hidden shadow-sm">
@@ -63,9 +74,14 @@ export const ProgramPreview: React.FC<ProgramPreviewProps> = ({
         ) : media.type === 'video' ? (
           <video
             ref={videoRef}
+            key={media.id}
             src={media.filePath}
             loop={isLoop}
             muted
+            playsInline
+            crossOrigin="anonymous"
+            preload="auto"
+            onLoadedData={handleLoadedData}
             className="w-full h-full object-contain"
           />
         ) : media.type === 'image' ? (

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -63,6 +64,57 @@ func (s *Store) SyncWithSupabase() {
 		s.data.Playlist = playlist
 		s.mu.Unlock()
 		_ = s.save()
+	}
+}
+
+// MigrateLocalMediaToSupabase scans for items with local /media/ path and uploads them to Supabase Storage
+func (s *Store) MigrateLocalMediaToSupabase(mediaDir string) {
+	if s.supabase == nil {
+		return
+	}
+
+	s.mu.RLock()
+	items := make([]models.MediaItem, len(s.data.MediaItems))
+	copy(items, s.data.MediaItems)
+	s.mu.RUnlock()
+
+	for _, item := range items {
+		if strings.HasPrefix(item.FilePath, "/media/") {
+			fileName := strings.TrimPrefix(item.FilePath, "/media/")
+			localFilePath := filepath.Join(mediaDir, fileName)
+			fileInfo, err := os.Stat(localFilePath)
+			if err == nil && !fileInfo.IsDir() {
+				fmt.Printf("☁️ [Supabase Cloud] Mengunggah file lokal '%s' (%.1f MB) ke Supabase Storage...\n", item.Name, float64(fileInfo.Size())/(1024*1024))
+				f, err := os.Open(localFilePath)
+				if err == nil {
+					contentType := "video/mp4"
+					if item.Type == models.MediaTypeImage {
+						contentType = "image/jpeg"
+					}
+					publicURL, uploadErr := s.supabase.UploadFile(fileName, f, contentType)
+					f.Close()
+
+					if uploadErr == nil {
+						fmt.Printf("✅ [Supabase Cloud] Berhasil migrasi '%s' ke Supabase Storage!\n   URL: %s\n", item.Name, publicURL)
+						s.mu.Lock()
+						for i := range s.data.MediaItems {
+							if s.data.MediaItems[i].ID == item.ID {
+								s.data.MediaItems[i].FilePath = publicURL
+								if item.Type != models.MediaTypeVideo {
+									s.data.MediaItems[i].ThumbnailURL = publicURL
+								}
+								_ = s.supabase.InsertMediaItem(s.data.MediaItems[i])
+								break
+							}
+						}
+						s.mu.Unlock()
+						_ = s.save()
+					} else {
+						fmt.Printf("⚠️ [Supabase Cloud] Gagal upload '%s': %v\n", item.Name, uploadErr)
+					}
+				}
+			}
+		}
 	}
 }
 

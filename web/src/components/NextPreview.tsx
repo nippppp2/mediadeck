@@ -34,9 +34,12 @@ export const NextPreview: React.FC<NextPreviewProps> = ({ media, onTake }) => {
           </div>
         ) : media.type === 'video' ? (
           <video
+            key={media.id}
             src={media.filePath}
             preload="metadata"
             muted
+            playsInline
+            crossOrigin="anonymous"
             className="w-full h-full object-contain"
           />
         ) : media.type === 'image' ? (
